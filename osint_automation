@@ -1,0 +1,72 @@
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from docx import Document
+from selenium.webdriver.common.by import By
+from docx.shared import Inches
+
+# Import for working with paths
+import os
+
+# Path to the OSINT report Word template
+word_template_path = r'C:\Users\Gokul\OneDrive\Desktop\OSINT Automation\OSINT_report_template.docx'
+# Path to save the screenshot
+screenshot_path = r'C:\Users\Gokul\OneDrive\Desktop\OSINT Automation\screenshot.png'
+# Path to your ChromeDriver
+chrome_driver_path = r'C:\Users\Gokul\PycharmProjects\Automation\chromedriver-win32\chromedriver.exe'
+
+# Set up Chrome options
+chrome_options = webdriver.ChromeOptions()
+
+# Initialize Chrome WebDriver
+service = Service(chrome_driver_path)
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# Go to www.securityheaders.com
+driver.get("https://www.securityheaders.com")
+
+# Pause for 5 seconds to let the page load
+time.sleep(3)
+
+driver.maximize_window()
+
+# Find the input box with ID 'q' and pass the URL 'www.bahwancybertek.com'
+search_box = driver.find_element(By.ID, "q")  # Use By.ID
+search_box.send_keys("www.bahwancybertek.com")
+
+# Pause for a moment to ensure the value is entered
+time.sleep(1)
+
+# Find the Scan button and click it
+scan_button = driver.find_element(By.XPATH, "//input[@id='scan']")  # Assuming it’s a submit button
+scan_button.click()
+
+# Pause to wait for the page to load the results
+time.sleep(5)
+
+# Scroll down to the Security Headers section
+security_headers_section = driver.find_element(By.XPATH, "//div[normalize-space()='Security Report Summary']")  # Adjust as needed
+driver.execute_script("arguments[0].scrollIntoView();", security_headers_section)
+
+# Pause to ensure scrolling is complete
+time.sleep(2)
+
+# Capture screenshot and save it to the specified path
+driver.save_screenshot(screenshot_path)
+
+# Close the WebDriver after taking the screenshot
+driver.quit()
+
+# Open the existing Word document
+document = Document(word_template_path)
+
+# Add a heading for the screenshot
+document.add_heading('Security Headers', level=1)
+
+# Insert the screenshot into the Word document
+document.add_picture(screenshot_path, width=Inches(6))  # Adjust the width as needed
+
+# Save the Word document
+document.save(word_template_path)
+
+print(f"Screenshot saved and added to the Word document: {word_template_path}")
