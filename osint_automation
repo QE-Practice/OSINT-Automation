@@ -1,57 +1,121 @@
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.edge.service import Service
 from docx import Document
 from selenium.webdriver.common.by import By
 from docx.shared import Inches
-
-# Import for working with paths
 import os
+from datetime import datetime
+import re  # Import regex for case-insensitive replacement
 
 # Path to the OSINT report Word template
-word_template_path = r'C:\Users\Gokul\OneDrive\Desktop\OSINT Automation\OSINT_report_template.docx'
-# Path to save the screenshot
-screenshot_path = r'C:\Users\Gokul\OneDrive\Desktop\OSINT Automation\screenshot.png'
-# Path to your ChromeDriver
-chrome_driver_path = r'C:\Users\Gokul\PycharmProjects\Automation\chromedriver-win32\chromedriver.exe'
+word_template_path = r'C:\Users\gj115602\Downloads\OSINT_report_template.docx'
 
-# Set up Chrome options
-chrome_options = webdriver.ChromeOptions()
+# Path to save the updated Word document (without the filename)
+screenshot_folder = r'D:\Python Automation\OSINT Automation\Screenshots'
 
-# Initialize Chrome WebDriver
-service = Service(chrome_driver_path)
-driver = webdriver.Chrome(service=service, options=chrome_options)
+# Path to your Edge WebDriver
+edge_driver_path = r'D:\Python Automation\OSINT Automation\msedgedriver.exe'
+
+# Company name to replace in the document
+new_company_name = "Bahwan CyberTek"
+current_date = datetime.now().strftime("%B %d, %Y")  # Format: 'October 14, 2024'
+
+# Function to replace text in paragraphs, runs, tables, headers, and footers
+def replace_text_in_doc(doc, old_text, new_text):
+    # Compile a regex pattern for case-insensitive matching
+    pattern = re.compile(re.escape(old_text), re.IGNORECASE)
+    found = False  # Track if we found any instances of old_text
+
+    # Replace in paragraphs
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:  # Check runs within the paragraph
+            normalized_text = re.sub(r'\s+', ' ', run.text.strip())  # Normalize whitespace
+            if pattern.search(normalized_text):
+                print(f"Found in paragraph (before): '{run.text}'")  # Debug: Show found text
+                run.text = pattern.sub(new_text, run.text)
+                print(f"Replaced with: '{run.text}'")  # Debug: Show replaced text
+                found = True
+
+    # Replace in tables
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:  # Check runs within table cells
+                        normalized_text = re.sub(r'\s+', ' ', run.text.strip())  # Normalize whitespace
+                        if pattern.search(normalized_text):
+                            print(f"Found in table cell (before): '{run.text}'")  # Debug: Show found text
+                            run.text = pattern.sub(new_text, run.text)
+                            print(f"Replaced with: '{run.text}'")  # Debug: Show replaced text
+                            found = True
+
+    # Replace in headers and footers
+    for section in doc.sections:
+        # Headers
+        header = section.header
+        for paragraph in header.paragraphs:
+            for run in paragraph.runs:
+                normalized_text = re.sub(r'\s+', ' ', run.text.strip())  # Normalize whitespace
+                if pattern.search(normalized_text):
+                    print(f"Found in header (before): '{run.text}'")  # Debug: Show found text
+                    run.text = pattern.sub(new_text, run.text)
+                    print(f"Replaced with: '{run.text}'")  # Debug: Show replaced text
+                    found = True
+        # Footers
+        footer = section.footer
+        for paragraph in footer.paragraphs:
+            for run in paragraph.runs:
+                normalized_text = re.sub(r'\s+', ' ', run.text.strip())  # Normalize whitespace
+                if pattern.search(normalized_text):
+                    print(f"Found in footer (before): '{run.text}'")  # Debug: Show found text
+                    run.text = pattern.sub(new_text, run.text)
+                    print(f"Replaced with: '{run.text}'")  # Debug: Show replaced text
+                    found = True
+
+    if not found:
+        print(f"No instances of '{old_text}' found in the document.")  # Debug: No text found
+
+# Initialize Edge WebDriver
+service = Service(edge_driver_path)
+edge_options = webdriver.EdgeOptions()
+driver = webdriver.Edge(service=service, options=edge_options)
 
 # Go to www.securityheaders.com
 driver.get("https://www.securityheaders.com")
 
-# Pause for 5 seconds to let the page load
-time.sleep(3)
+# Pause for 2 seconds to let the page load
+time.sleep(2)
 
 driver.maximize_window()
 
 # Find the input box with ID 'q' and pass the URL 'www.bahwancybertek.com'
-search_box = driver.find_element(By.ID, "q")  # Use By.ID
+search_box = driver.find_element(By.ID, "q")
 search_box.send_keys("www.bahwancybertek.com")
 
 # Pause for a moment to ensure the value is entered
 time.sleep(1)
 
 # Find the Scan button and click it
-scan_button = driver.find_element(By.XPATH, "//input[@id='scan']")  # Assuming it’s a submit button
+scan_button = driver.find_element(By.XPATH, "//input[@id='scan']")
 scan_button.click()
 
 # Pause to wait for the page to load the results
-time.sleep(5)
+time.sleep(2)
 
 # Scroll down to the Security Headers section
-security_headers_section = driver.find_element(By.XPATH, "//div[normalize-space()='Security Report Summary']")  # Adjust as needed
+security_headers_section = driver.find_element(By.XPATH, "//div[normalize-space()='Security Report Summary']")
 driver.execute_script("arguments[0].scrollIntoView();", security_headers_section)
 
 # Pause to ensure scrolling is complete
 time.sleep(2)
 
-# Capture screenshot and save it to the specified path
+# Generate a dynamic filename for the screenshot using the current timestamp
+timestamp = time.strftime("%Y%m%d-%H%M%S")
+screenshot_filename = f"screenshot_{timestamp}.png"
+screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
+
+# Capture screenshot and save it to the dynamically generated path
 driver.save_screenshot(screenshot_path)
 
 # Close the WebDriver after taking the screenshot
@@ -60,13 +124,31 @@ driver.quit()
 # Open the existing Word document
 document = Document(word_template_path)
 
+# Print the paragraphs before the replacement for debugging
+print("Paragraphs before replacement:")
+for paragraph in document.paragraphs:
+    print(f"- {paragraph.text}")
+
+# Replace the placeholder company name and date in the document
+try:
+    replace_text_in_doc(document, "Greenroads", new_company_name)
+    replace_text_in_doc(document, "Date Placeholder", current_date)
+except Exception as e:
+    print(f"Error during replacement: {e}")
+
+# Print the paragraphs after the replacement for debugging
+print("Paragraphs after replacement:")
+for paragraph in document.paragraphs:
+    print(f"- {paragraph.text}")
+
 # Add a heading for the screenshot
 document.add_heading('Security Headers', level=1)
 
 # Insert the screenshot into the Word document
 document.add_picture(screenshot_path, width=Inches(6))  # Adjust the width as needed
 
-# Save the Word document
-document.save(word_template_path)
+# Save the updated Word document (you can save it with a new name if needed)
+updated_report_path = os.path.join(screenshot_folder, f'OSINT_report_{new_company_name}_{timestamp}.docx')
+document.save(updated_report_path)
 
-print(f"Screenshot saved and added to the Word document: {word_template_path}")
+print(f"Screenshot saved as {screenshot_filename} and report saved as {updated_report_path}")
