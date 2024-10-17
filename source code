@@ -5,8 +5,10 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from docx import Document
 from docx.shared import Inches
 
@@ -16,9 +18,7 @@ word_template_path = r'C:\Users\gj115602\Downloads\OSINT_report_template.docx'
 # Path to save the updated Word document
 screenshot_folder = r'D:\Python Automation\OSINT Automation\Screenshots'
 
-# Path to your Edge WebDriver and Wappalyzer extension
-edge_driver_path = r'D:\Python Automation\OSINT Automation\msedgedriver.exe'
-
+# Path to your Wappalyzer extension
 wappalyzer_extension_path = r'D:\Python Automation\OSINT Automation\Extensions\a02842b4-e272-4cff-937d-aee0e0ce3d5c.crx'
 
 # Company name to replace in the document
@@ -70,40 +70,44 @@ def replace_text_in_doc(doc, old_text, new_text):
 
 
 # Function to visit a website, trigger Wappalyzer, and take a screenshot
-# def visit_website_and_take_wappalyzer_screenshot(url_to_scan, driver_path, extension_path, screenshot_folder):
-#     service = Service(driver_path)
-#     edge_options = webdriver.EdgeOptions()
-#     edge_options.add_argument("--inprivate")
+def visit_website_and_take_wappalyzer_screenshot(url_to_scan, extension_path, screenshot_folder):
+    chrome_options = Options()
+    chrome_options.add_argument("--incognito")
+    chrome_options.add_extension(extension_path)
 
-#     # Start Edge WebDriver
-#     driver = webdriver.Edge(service=service, options=edge_options)
-#     driver.get(url_to_scan)
-#     time.sleep(5)  # Wait for the page to load
+    # Start Chrome WebDriver using WebDriverManager
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get(url_to_scan)
+    time.sleep(5)  # Wait for the page to load
 
-#     # Ensure the browser is in focus and activate the Wappalyzer extension using keyboard shortcut (Ctrl + Shift + W)
-#     driver.switch_to.active_element.click()
-#     actions = ActionChains(driver)
-#     actions.key_down(Keys.CONTROL).key_down(Keys.SHIFT).send_keys('W').key_up(Keys.SHIFT).key_up(Keys.CONTROL).perform()
+    # Ensure the browser is in focus and activate the Wappalyzer extension using keyboard shortcut (Ctrl + Shift + W)
+    driver.switch_to.active_element.click()
+    actions = ActionChains(driver)
+    actions.key_down(Keys.CONTROL).key_down(Keys.SHIFT).send_keys('W').key_up(Keys.SHIFT).key_up(Keys.CONTROL).perform()
 
-#     # Add a slight delay to ensure the extension activates
-#     time.sleep(3)
+    # Add a slight delay to ensure the extension activates
+    time.sleep(3)
 
-#     # Take a screenshot
-#     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-#     screenshot_filename = f"screenshot_wappalyzer_{timestamp}.png"
-#     screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
+    # Take a screenshot
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    screenshot_filename = f"screenshot_wappalyzer_{timestamp}.png"
+    screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
 
-#     driver.save_screenshot(screenshot_path)
-#     driver.quit()
+    driver.save_screenshot(screenshot_path)
+    driver.quit()
 
-#     return screenshot_path
+    return screenshot_path
+
 
 # Function to go to SecurityHeaders.com, scan a site, and take a screenshot
-def scan_security_headers_and_take_screenshot(url_to_scan, driver_path, screenshot_folder):
-    service = Service(driver_path)
-    edge_options = webdriver.EdgeOptions()
-    edge_options.add_argument("--inprivate")
-    driver = webdriver.Edge(service=service, options=edge_options)
+def scan_security_headers_and_take_screenshot(url_to_scan, screenshot_folder):
+    chrome_options = Options()
+    chrome_options.add_argument("--incognito")
+
+    # Start Chrome WebDriver using WebDriverManager
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     # Go to www.securityheaders.com
     driver.get("https://securityheaders.com/")
@@ -142,10 +146,12 @@ def scan_security_headers_and_take_screenshot(url_to_scan, driver_path, screensh
 
 
 # Function to check DMARC record and take a screenshot
-def check_dmarc_record_and_take_screenshot(url_to_scan, driver_path, screenshot_folder):
-    service = Service(driver_path)
-    edge_options = webdriver.EdgeOptions()
-    driver = webdriver.Edge(service=service, options=edge_options)
+def check_dmarc_record_and_take_screenshot(url_to_scan, screenshot_folder):
+    chrome_options = Options()
+
+    # Start Chrome WebDriver using WebDriverManager
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     # Go to mxtoolbox.com DMARC check
     driver.get("https://mxtoolbox.com/SuperTool.aspx?action=dmarc%3a" + url_to_scan)
@@ -214,23 +220,20 @@ def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_
 
 # Main execution flow: Security Headers scan, check DMARC, take screenshots, and insert them into the Word report
 url_to_scan = "www.facebook.com"
-# wappalyzer_screenshot_path = visit_website_and_take_wappalyzer_screenshot(url_to_scan, edge_driver_path, wappalyzer_extension_path, screenshot_folder)
-security_headers_screenshot_path = scan_security_headers_and_take_screenshot(url_to_scan, edge_driver_path,
-                                                                             screenshot_folder)
-dmarc_screenshot_path = check_dmarc_record_and_take_screenshot(url_to_scan, edge_driver_path, screenshot_folder)
+wappalyzer_screenshot_path = visit_website_and_take_wappalyzer_screenshot(url_to_scan, wappalyzer_extension_path, screenshot_folder)
+security_headers_screenshot_path = scan_security_headers_and_take_screenshot(url_to_scan, screenshot_folder)
+dmarc_screenshot_path = check_dmarc_record_and_take_screenshot(url_to_scan, screenshot_folder)
 
-# Dictionary to hold all screenshot paths (Wappalyzer screenshot commented out)
+# Store the screenshot paths in a dictionary
 screenshot_paths = {
-    # 'wappalyzer': wappalyzer_screenshot_path,
-    'security_headers': security_headers_screenshot_path,
-    'dmarc': dmarc_screenshot_path
+    "wappalyzer": wappalyzer_screenshot_path,
+    "security_headers": security_headers_screenshot_path,
+    "dmarc": dmarc_screenshot_path
 }
 
-# Insert all the screenshots into the Word document
+# Insert the screenshots into the Word document
 updated_report_path = insert_all_screenshots_in_word(
-    word_template_path,
-    new_company_name,
-    current_date,
-    screenshot_paths,
-    screenshot_folder
+    word_template_path, new_company_name, current_date, screenshot_paths, screenshot_folder
 )
+
+print(f"Updated OSINT report saved at: {updated_report_path}")
