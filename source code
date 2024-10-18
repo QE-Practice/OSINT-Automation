@@ -108,6 +108,40 @@ def scan_security_headers(driver, url_to_scan, screenshot_folder):
 
     return screenshot_path
 
+# Function to check DKIM record and take a screenshot
+def check_dkim_record(driver, domain, selector, screenshot_folder):
+    # Go to the MXToolbox DKIM lookup page
+    driver.get("https://mxtoolbox.com/DKIM.aspx")
+    time.sleep(2)
+
+    # Find the input box for the domain and selector, and pass the values
+    domain_input = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput")
+    selector_input = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_txtSelector")
+
+    domain_input.send_keys(domain)
+    selector_input.send_keys(selector)
+    time.sleep(1)
+
+    # Find the Lookup button and click it
+    lookup_button = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_btnAction")
+    lookup_button.click()
+    time.sleep(5)
+
+    # Scroll down to the results section (if necessary)
+    result_section = driver.find_element(By.XPATH, "//span[@id='lblResult']")
+    driver.execute_script("arguments[0].scrollIntoView();", result_section)
+    time.sleep(2)
+
+    # Generate a dynamic filename for the screenshot using the current timestamp
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    screenshot_filename = f"{domain}_dkim_lookup_{timestamp}.png"
+    screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
+
+    # Capture screenshot and save it to the dynamically generated path
+    driver.save_screenshot(screenshot_path)
+
+    return screenshot_path
+
 
 # Function to check DMARC record and take a screenshot
 def check_dmarc_record(driver, url_to_scan, screenshot_folder):
@@ -129,7 +163,6 @@ def check_dmarc_record(driver, url_to_scan, screenshot_folder):
 
     return screenshot_path
 
-
 # Function to insert all screenshots into the Word document
 def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_date, screenshot_paths, output_folder):
     # Open the existing Word document
@@ -147,7 +180,11 @@ def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_
 
         {"heading": "DMARC Record Check",
          "paragraph": "The following section provides the results of the DMARC record check for the target domain using MXToolbox.",
-         "screenshot": screenshot_paths.get('dmarc')}
+         "screenshot": screenshot_paths.get('dmarc')},
+
+        {"heading": "DKIM Record Check",
+         "paragraph": "The following section provides the results of the DKIM record check for the target domain using MXToolbox.",
+         "screenshot": screenshot_paths.get('dkim')}
     ]
 
     # Insert the screenshots and their respective headings and paragraphs
@@ -181,10 +218,14 @@ def main():
     # Check DMARC record and take a screenshot
     dmarc_screenshot_path = check_dmarc_record(driver, url_to_scan, screenshot_folder)
 
+    # Check DKIM record and take a screenshot
+    dkim_screenshot_path = check_dkim_record(driver, url_to_scan, "default", screenshot_folder)
+
     # Store the screenshot paths in a dictionary
     screenshot_paths = {
         "security_headers": security_headers_screenshot_path,
-        "dmarc": dmarc_screenshot_path
+        "dmarc": dmarc_screenshot_path,
+        "dkim": dkim_screenshot_path
     }
 
     # Insert the screenshots into the Word document
