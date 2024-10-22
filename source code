@@ -3,8 +3,6 @@ import re
 import time
 from datetime import datetime
 from selenium import webdriver
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
@@ -77,44 +75,41 @@ def initialize_driver():
     return driver
 
 
+# Helper function to capture screenshots with timestamps
+def capture_screenshot_with_timestamp(driver, folder_path, description):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    screenshot_filename = f"screenshot_{description}_{timestamp}.png"
+    screenshot_path = os.path.join(folder_path, screenshot_filename)
+    driver.save_screenshot(screenshot_path)
+    return screenshot_path
+
+
 # Function to go to SecurityHeaders.com, scan a site, and take a screenshot
 def scan_security_headers(driver, url_to_scan, screenshot_folder):
-    # Go to www.securityheaders.com
     driver.get("https://securityheaders.com/")
     time.sleep(2)
 
-    # Find the input box with ID 'q' and pass the target URL
     search_box = driver.find_element(By.ID, "q")
     search_box.send_keys(url_to_scan)
     time.sleep(1)
 
-    # Find the Scan button and click it
     scan_button = driver.find_element(By.XPATH, "//input[@id='scan']")
     scan_button.click()
     time.sleep(2)
 
-    # Scroll down to the Security Headers section
     security_headers_section = driver.find_element(By.XPATH, "//div[normalize-space()='Security Report Summary']")
     driver.execute_script("arguments[0].scrollIntoView();", security_headers_section)
     time.sleep(2)
 
-    # Generate a dynamic filename for the screenshot using the current timestamp
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    screenshot_filename = f"screenshot_security_headers_{timestamp}.png"
-    screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
-
-    # Capture screenshot and save it to the dynamically generated path
-    driver.save_screenshot(screenshot_path)
-
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "security_headers")
     return screenshot_path
+
 
 # Function to check DKIM record and take a screenshot
 def check_dkim_record(driver, domain, selector, screenshot_folder):
-    # Go to the MXToolbox DKIM lookup page
     driver.get("https://mxtoolbox.com/DKIM.aspx")
     time.sleep(2)
 
-    # Find the input box for the domain and selector, and pass the values
     domain_input = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput")
     selector_input = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_txtSelector")
 
@@ -122,84 +117,106 @@ def check_dkim_record(driver, domain, selector, screenshot_folder):
     selector_input.send_keys(selector)
     time.sleep(1)
 
-    # Find the Lookup button and click it
     lookup_button = driver.find_element(By.ID, "ctl00_ContentPlaceHolder1_ucToolhandler_btnAction")
     lookup_button.click()
     time.sleep(5)
 
-    # Scroll down to the results section (if necessary)
     result_section = driver.find_element(By.XPATH, "//span[@id='lblResult']")
     driver.execute_script("arguments[0].scrollIntoView();", result_section)
     time.sleep(2)
 
-    # Generate a dynamic filename for the screenshot using the current timestamp
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    screenshot_filename = f"{domain}_dkim_lookup_{timestamp}.png"
-    screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
-
-    # Capture screenshot and save it to the dynamically generated path
-    driver.save_screenshot(screenshot_path)
-
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "dkim")
     return screenshot_path
 
 
 # Function to check DMARC record and take a screenshot
 def check_dmarc_record(driver, url_to_scan, screenshot_folder):
-    # Go to mxtoolbox.com DMARC check
     driver.get("https://mxtoolbox.com/SuperTool.aspx?action=dmarc%3a" + url_to_scan)
     time.sleep(3)
 
-    # Scroll to the specified element
     element_to_scroll_to = driver.find_element(By.XPATH, "//div[@class='tool-result-body']//div[3]")
     driver.execute_script("arguments[0].scrollIntoView();", element_to_scroll_to)
-    time.sleep(1)  # Allow time for the scrolling animation
+    time.sleep(1)
 
-    # Take a screenshot of the DMARC check results
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    screenshot_filename = f"screenshot_dmarc_{timestamp}.png"
-    screenshot_path = os.path.join(screenshot_folder, screenshot_filename)
-
-    driver.save_screenshot(screenshot_path)
-
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "dmarc")
     return screenshot_path
+
+
+# Function to perform an Nmap scan using an online tool and take a screenshot
+def nmap_scan(driver, url_to_scan, screenshot_folder):
+    driver.get('https://hackertarget.com/nmap-online-port-scanner/')
+    time.sleep(3)
+    driver.execute_script("window.scrollBy(0, 500);")
+
+    website = driver.find_element(By.XPATH, "//input[@placeholder='IP address to scan...']")
+    website.send_keys(url_to_scan)
+
+    QuickNmapScan = driver.find_element(By.ID, 'clickform')
+    QuickNmapScan.click()
+
+    time.sleep(3)
+    driver.execute_script("window.scrollBy(0, 200);")
+
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "nmap")
+    return screenshot_path
+
+
+# Function to scan SPF record and take a screenshot
+def spf_record(driver, url_to_scan, screenshot_folder):
+    driver.get('https://mxtoolbox.com/')
+    time.sleep(3)
+
+    websitelink = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput')
+    websitelink.send_keys(url_to_scan)
+
+    mxlookupbtn = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_ucToolhandler_btnAction')
+    mxlookupbtn.click()
+    time.sleep(5)
+
+    click_scroll = driver.find_element(By.XPATH, '//*[@id="btnAction4"]/span')
+    click_scroll.click()
+    time.sleep(3)
+
+    select_spf = driver.find_element(By.XPATH, '//*[@id="picker2"]/div/div/ul/div/li[8]/a/div')
+    select_spf.click()
+    time.sleep(3)
+
+    click_spfrecord = driver.find_element(By.ID, 'btnAction3')
+    click_spfrecord.click()
+    time.sleep(5)
+
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "spf_record")
+    return screenshot_path
+
 
 # Function to insert all screenshots into the Word document
 def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_date, screenshot_paths, output_folder):
-    # Open the existing Word document
     document = Document(doc_template_path)
 
-    # Replace the placeholder company name and date in the document
     replace_text_in_doc(document, "Greenroads", new_company_name)
     replace_text_in_doc(document, "Date Placeholder", current_date)
 
-    # Define sections and explanations for each screenshot
     sections = [
-        {"heading": "Security Headers",
-         "paragraph": "The following section provides a security header scan summary of the target website using SecurityHeaders.com.",
+        {"heading": "Security Headers", "paragraph": "Security header scan summary.",
          "screenshot": screenshot_paths.get('security_headers')},
-
-        {"heading": "DMARC Record Check",
-         "paragraph": "The following section provides the results of the DMARC record check for the target domain using MXToolbox.",
+        {"heading": "Nmap Scan", "paragraph": "Nmap port scan results.", "screenshot": screenshot_paths.get('nmap')},
+        {"heading": "SPF Record", "paragraph": "SPF record lookup result.", "screenshot": screenshot_paths.get('spf')},
+        {"heading": "DMARC Record Check", "paragraph": "DMARC record check results.",
          "screenshot": screenshot_paths.get('dmarc')},
-
-        {"heading": "DKIM Record Check",
-         "paragraph": "The following section provides the results of the DKIM record check for the target domain using MXToolbox.",
+        {"heading": "DKIM Record Check", "paragraph": "DKIM record check results.",
          "screenshot": screenshot_paths.get('dkim')}
     ]
 
-    # Insert the screenshots and their respective headings and paragraphs
     for section in sections:
-        if section["screenshot"]:  # Ensure that screenshot paths exist before attempting to insert them
+        if section["screenshot"]:
             document.add_heading(section["heading"], level=1)
             document.add_paragraph(section["paragraph"])
             document.add_picture(section["screenshot"], width=Inches(6))
 
-    # Generate a dynamic filename for the updated Word document
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     updated_report_filename = f'{timestamp}_OSINT_report_{new_company_name}.docx'
     updated_report_path = os.path.join(output_folder, updated_report_filename)
 
-    # Save the updated Word document
     document.save(updated_report_path)
 
     return updated_report_path
@@ -208,34 +225,26 @@ def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_
 # Main function to execute all tests
 def main():
     url_to_scan = "www.facebook.com"
-
-    # Initialize the WebDriver
     driver = initialize_driver()
 
-    # Scan Security Headers and take a screenshot
     security_headers_screenshot_path = scan_security_headers(driver, url_to_scan, screenshot_folder)
-
-    # Check DMARC record and take a screenshot
     dmarc_screenshot_path = check_dmarc_record(driver, url_to_scan, screenshot_folder)
-
-    # Check DKIM record and take a screenshot
     dkim_screenshot_path = check_dkim_record(driver, url_to_scan, "default", screenshot_folder)
+    nmap_screenshot_path = nmap_scan(driver, url_to_scan, screenshot_folder)
+    spf_screenshot_path = spf_record(driver, url_to_scan, screenshot_folder)
 
-    # Store the screenshot paths in a dictionary
     screenshot_paths = {
         "security_headers": security_headers_screenshot_path,
         "dmarc": dmarc_screenshot_path,
-        "dkim": dkim_screenshot_path
+        "dkim": dkim_screenshot_path,
+        "nmap": nmap_screenshot_path,
+        "spf": spf_screenshot_path
     }
 
-    # Insert the screenshots into the Word document
-    updated_report_path = insert_all_screenshots_in_word(
-        word_template_path, new_company_name, current_date, screenshot_paths, screenshot_folder
-    )
-
+    updated_report_path = insert_all_screenshots_in_word(word_template_path, new_company_name, current_date,
+                                                         screenshot_paths, screenshot_folder)
     print(f"Updated OSINT report saved at: {updated_report_path}")
 
-    # Close the WebDriver after completing all tasks
     driver.quit()
 
 
