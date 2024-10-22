@@ -1,0 +1,22 @@
+def nmap(driver,doc):
+     driver.get('https://hackertarget.com/nmap-online-port-scanner/')
+     # Wait for the page to load
+     #time.sleep(3)
+     print('page loaded')
+     # Scroll down by 1000 pixels
+     time.sleep(3)
+     driver.execute_script("window.scrollBy(0, 500);")
+     print('scroll over')
+     website = driver.find_element(By.XPATH,"//input[@placeholder='IP address to scan...']")
+     print('website clicked')
+     print('website clicked')
+     website.send_keys('www.al-ghurair.com')
+     QuickNmapScan = driver.find_element(By.ID ,'clickform')
+     QuickNmapScan.click()
+     time.sleep(3)
+     driver.execute_script("window.scrollBy(0, 200);")
+     print('over')
+
+     description = "Nmap result"
+     screenshot_path = capture_screenshot_with_timestamp(driver, save_path, description)
+     add_screenshot_to_template(doc, screenshot_path, description)
