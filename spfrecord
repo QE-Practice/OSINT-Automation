@@ -1,0 +1,32 @@
+def spf_record(driver, doc):
+    driver.get('https://mxtoolbox.com/')
+    # Wait for the page to load
+    time.sleep(3)
+    print('website loaded')
+
+    websitelink = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput')
+    websitelink.send_keys("https://www.bahwancybertek.com/")
+    print('send keys completed')
+
+    mxlookupbtn = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_ucToolhandler_btnAction')
+    mxlookupbtn.click()
+    # Wait for some time before clicking the SPF option
+    time.sleep(5)
+
+    click_scroll = driver.find_element(By.XPATH, '//*[@id="btnAction4"]/span')
+    click_scroll.click()
+
+    # Wait for the SPF selection option to appear
+    time.sleep(3)
+
+    select_spf = driver.find_element(By.XPATH, '//*[@id="picker2"]/div/div/ul/div/li[8]/a/div')
+    select_spf.click()
+    # Wait before clicking to view the SPF record
+    time.sleep(3)
+    click_spfrecord = driver.find_element(By.ID, 'btnAction3')
+    click_spfrecord.click()
+
+    # Capture screenshot and add to document
+    description = "SPF record lookup result"
+    screenshot_path = capture_screenshot_with_timestamp(driver, save_path, description)
+    add_screenshot_to_template(doc, screenshot_path, description)
