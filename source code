@@ -185,6 +185,9 @@ def spf_record(driver, url_to_scan, screenshot_folder):
     click_spfrecord.click()
     time.sleep(5)
 
+    driver.execute_script("window.scrollBy(0, 300);")
+    time.sleep(3)
+
     screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "spf_record")
     return screenshot_path
 
@@ -227,10 +230,15 @@ def main():
     url_to_scan = "www.facebook.com"
     driver = initialize_driver()
 
+    print('Security_headers Started')
     security_headers_screenshot_path = scan_security_headers(driver, url_to_scan, screenshot_folder)
+    print('Dmarc Record Lookup Started')
     dmarc_screenshot_path = check_dmarc_record(driver, url_to_scan, screenshot_folder)
+    print('Dkim Record Lookup Started')
     dkim_screenshot_path = check_dkim_record(driver, url_to_scan, "default", screenshot_folder)
+    print('NMAP Scan started')
     nmap_screenshot_path = nmap_scan(driver, url_to_scan, screenshot_folder)
+    print('SPF Record Lookup Started')
     spf_screenshot_path = spf_record(driver, url_to_scan, screenshot_folder)
 
     screenshot_paths = {
