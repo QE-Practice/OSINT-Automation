@@ -1,0 +1,59 @@
+def wapplyzer_scan(driver, url_to_scan, screenshot_folder):
+    driver.get('https://www.wappalyzer.com/installed/?utm_source=installed&utm_medium=extension&utm_campaign=wappalyzer')
+    time.sleep(3)
+    print('sigin btn clicked')
+    sign_in = driver.find_element(By.CSS_SELECTOR,   "button.font-weight-regular.v-btn.v-btn--text.theme--light.v-size--default.white--text")
+    sign_in.click()
+    print('email given')
+    # Locate and fill the email field
+    email = driver.find_element(By.ID, "input-208")
+    email.send_keys("kondeti.venkata@bahwancybertek.com")
+
+    # Locate and fill the password field
+    password = driver.find_element(By.ID, "input-209")
+    password.send_keys("Teja@1234")
+
+    # Locate and click the Sign In button
+    sign_in_btn = driver.find_element(By.XPATH, "//*[@id='app']/div[3]/div/div/div[2]/form/button")
+    sign_in_btn.click()
+
+    # Wait for the page to load
+    time.sleep(5)
+
+    # Scroll to the bottom of the page
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(3)
+
+    # Click the Wappalyzer link
+    wappalyzer_link = driver.find_element(By.CSS_SELECTOR, ".mx-auto.d-inline-block.d-sm-block.nuxt-link-active")
+    wappalyzer_link.click()
+    print("Wappalyzer click completed")
+
+    # Click the search bar and input the URL to analyze
+    search_bar = driver.find_element(By.CSS_SELECTOR,
+                                     "input[placeholder='Website URL, technology, keyword or email address']")
+    search_bar.click()
+    print("Click completed")
+
+    # Enter the URL for lookup
+    search_url = driver.find_element(By.CSS_SELECTOR, "input[required='required']")
+    search_url.send_keys("https://www.bahwancybertek.com/")
+    print("Sending the key")
+    # Wait for some time
+    time.sleep(5)
+    # Locate and click the Technology Lookup button
+    tech_lookup = driver.find_element(By.CSS_SELECTOR, ".d-flex.align-center.caption.font-weight-medium")
+    tech_lookup.click()
+    time.sleep(10)
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "Wapplyzer ecord")
+    return screenshot_path
+
+    # Scroll down in increments
+    driver.execute_script("window.scrollBy(0, window.innerHeight);")
+    time.sleep(3)
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "Wapplyzer Record")
+    return screenshot_path
+    driver.execute_script("window.scrollBy(0, window.innerHeight);")
+    time.sleep(3)
+    screenshot_path = capture_screenshot_with_timestamp(driver, screenshot_folder, "Wapplyzer Record")
+    return screenshot_path
