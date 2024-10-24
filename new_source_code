@@ -1,0 +1,256 @@
+import os
+import re
+import time
+from datetime import datetime
+from playwright.sync_api import sync_playwright
+from docx import Document
+from docx.shared import Inches
+
+# URL to scan
+url_to_scan = "www.bahwancybertek.com"
+
+# Path to the OSINT report Word template
+word_template_path = r'C:\Users\gj115602\Downloads\OSINT_report_template.docx'
+screenshot_folder = r'D:\Python Automation\OSINT Automation\Screenshots'
+new_company_name = "Facebook"
+current_date = datetime.now().strftime("%B %d, %Y")  # Format: 'October 14, 2024'
+
+# Function to replace text in paragraphs, runs, tables, headers, and footers
+def replace_text_in_doc(doc, old_text, new_text):
+    pattern = re.compile(re.escape(old_text), re.IGNORECASE)
+    found = False
+
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            normalized_text = re.sub(r'\s+', ' ', run.text.strip())
+            if pattern.search(normalized_text):
+                run.text = pattern.sub(new_text, run.text)
+                found = True
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        normalized_text = re.sub(r'\s+', ' ', run.text.strip())
+                        if pattern.search(normalized_text):
+                            run.text = pattern.sub(new_text, run.text)
+                            found = True
+
+    for section in doc.sections:
+        header = section.header
+        for paragraph in header.paragraphs:
+            for run in paragraph.runs:
+                normalized_text = re.sub(r'\s+', ' ', run.text.strip())
+                if pattern.search(normalized_text):
+                    run.text = pattern.sub(new_text, run.text)
+                    found = True
+
+        footer = section.footer
+        for paragraph in footer.paragraphs:
+            for run in paragraph.runs:
+                normalized_text = re.sub(r'\s+', ' ', run.text.strip())
+                if pattern.search(normalized_text):
+                    run.text = pattern.sub(new_text, run.text)
+                    found = True
+
+    if not found:
+        print(f"No instances of '{old_text}' found in the document.")
+
+# Helper function to capture screenshots with timestamps
+def capture_screenshot_with_timestamp(page, folder_path, description):
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    screenshot_filename = f"screenshot_{description}_{timestamp}.png"
+    screenshot_path = os.path.join(folder_path, screenshot_filename)
+    page.screenshot(path=screenshot_path)
+    return screenshot_path
+
+# Function to scan Security Headers
+def scan_security_headers(page, url_to_scan, screenshot_folder):
+
+    page.goto("https:www.securityheaders.com/", wait_until="load")
+
+    page.wait_for_timeout(5000)
+
+    page.fill("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/header[1]/form[1]/div[1]/div[1]/input[1]", url_to_scan)
+
+    # Click the scan button
+    page.click("//input[@id='scan']")
+
+    # Wait for the Security Report Summary to appear
+    page.wait_for_selector("text=Security Report Summary", timeout=10000)
+
+    # Scroll down a bit for the screenshot
+    page.evaluate('window.scrollBy(0, 300);')
+
+    # Capture the screenshot
+    screenshot_path = capture_screenshot_with_timestamp(page, screenshot_folder, "security_headers")
+
+    return screenshot_path
+
+# Function to check DKIM record
+def check_dkim_record(page, domain, selector, screenshot_folder):
+    page.goto("https://mxtoolbox.com/DKIM.aspx")
+    page.fill("#ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput", domain)
+    page.fill("#ctl00_ContentPlaceHolder1_ucToolhandler_txtSelector", selector)
+    page.click("#ctl00_ContentPlaceHolder1_ucToolhandler_btnAction")
+    page.wait_for_timeout(5000)
+    page.evaluate('document.querySelector("span#lblResult").scrollIntoView()')
+    page.wait_for_timeout(2000)
+    screenshot_path = capture_screenshot_with_timestamp(page, screenshot_folder, "dkim")
+    return screenshot_path
+
+# Function to check DMARC record
+def check_dmarc_record(page, url_to_scan, screenshot_folder):
+    page.goto(f"https://mxtoolbox.com/SuperTool.aspx?action=dmarc%3a{url_to_scan}")
+    page.wait_for_timeout(3000)
+    page.evaluate('document.querySelector(".tool-result-body div:nth-child(3)").scrollIntoView()')
+    page.wait_for_timeout(1000)
+    screenshot_path = capture_screenshot_with_timestamp(page, screenshot_folder, "dmarc")
+    return screenshot_path
+
+# Function to perform an Nmap scan
+def nmap_scan(page, url_to_scan, screenshot_folder):
+    page.goto('https://hackertarget.com/nmap-online-port-scanner/')
+    page.evaluate('window.scrollBy(0, 500)')
+    page.fill("input[placeholder='IP address to scan...']", url_to_scan)
+    page.click("button#clickform")
+    page.wait_for_timeout(3000)
+    # Scroll to the element using XPath
+    element = page.locator('//pre[@id="formResponse"]')
+    element.scroll_into_view_if_needed()
+    page.wait_for_timeout(3000)
+    screenshot_path = capture_screenshot_with_timestamp(page, screenshot_folder, "nmap")
+    return screenshot_path
+
+# Function to scan SPF record
+def spf_record(page, url_to_scan, screenshot_folder):
+    page.goto('https://mxtoolbox.com/')
+    page.fill('#ctl00_ContentPlaceHolder1_ucToolhandler_txtToolInput', url_to_scan)
+    page.click('#ctl00_ContentPlaceHolder1_ucToolhandler_btnAction')
+    page.wait_for_timeout(5000)
+    page.wait_for_timeout(3000)
+    page.click('#btnAction4')
+    page.wait_for_timeout(3000)
+    page.click('#picker2 div div ul div li:nth-child(8) a div')
+    page.wait_for_timeout(3000)
+    page.click('#btnAction3')
+    page.wait_for_timeout(5000)
+    element = page.locator("//a[@id='lnkMonitorThis' and contains(@class, '--monitor-this-spf')]")
+    element.scroll_into_view_if_needed()
+    page.wait_for_timeout(3000)
+    screenshot_path = capture_screenshot_with_timestamp(page, screenshot_folder, "spf_record")
+    return screenshot_path
+
+def wapplyzer_scan(page, url_to_scan, screenshot_folder):
+    # Navigate to Wappalyzer login page
+    page.goto('https://www.wappalyzer.com/')
+    time.sleep(3)
+
+    sign_in_button = page.query_selector("button.font-weight-regular.v-btn.v-btn--text.theme--light.v-size--default.white--text")
+    sign_in_button.click()
+
+    page.fill("#input-354", "kondeti.venkata@bahwancybertek.com")
+    page.fill("#input-355", "Teja@1234")
+
+    sign_in_btn = page.query_selector("//*[@id='app']/div[3]/div/div/div[2]/form/button")
+    sign_in_btn.click()
+    time.sleep(5)
+
+    search_bar = page.query_selector("input[placeholder='Website URL, technology, keyword or email address']")
+    search_bar.click()
+
+    search_url = page.query_selector("input[required='required']")
+    search_url.fill(url_to_scan)  # Use the Facebook URL for Wappalyzer
+
+    time.sleep(5)
+
+    tech_lookup = page.query_selector(".d-flex.align-center.caption.font-weight-medium")
+    tech_lookup.click()
+    time.sleep(10)
+
+    # Initialize list to hold screenshot paths
+    screenshot_paths = []
+
+    # Capture the first screenshot
+    screenshot_paths.append(capture_screenshot_with_timestamp(page, screenshot_folder, "Wappalyzer_Record_1"))
+
+    for _ in range(2):  # Scroll down and capture more screenshots
+        page.evaluate("window.scrollBy(0, window.innerHeight);")
+        time.sleep(3)
+        screenshot_paths.append(capture_screenshot_with_timestamp(page, screenshot_folder, f"Wappalyzer_Record_{len(screenshot_paths) + 1}"))
+
+    return screenshot_paths  # Return the list of screenshot paths
+
+# Function to insert all screenshots into the Word document
+def insert_all_screenshots_in_word(doc_template_path, new_company_name, current_date, screenshot_paths, output_folder):
+    document = Document(doc_template_path)
+
+    replace_text_in_doc(document, "Greenroads", new_company_name)
+    replace_text_in_doc(document, "Date Placeholder", current_date)
+
+    # Insert screenshots in the specified order
+    headings = [
+        #("Security Headers", screenshot_paths['security_headers']),
+        ("NMAP Scan", screenshot_paths['nmap']),
+        ("SPF Record Lookup", screenshot_paths['spf']),
+        ("DMARC Record Lookup", screenshot_paths['dmarc']),
+        ("DKIM Record Lookup", screenshot_paths['dkim']),
+        ("Tech Stack Scan", screenshot_paths['wappalyzer']),
+    ]
+
+    for heading, screenshot in headings:
+        document.add_heading(heading, level=1)
+        document.add_paragraph(f"The results for {heading} are shown below:")
+
+        # Check if the screenshot is a list (for Wappalyzer)
+        if isinstance(screenshot, list):
+            for img in screenshot:
+                document.add_picture(img, width=Inches(6))
+        else:
+            document.add_picture(screenshot, width=Inches(6))
+
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    updated_report_filename = f'{timestamp}_OSINT_report_{new_company_name}.docx'
+    updated_report_path = os.path.join(output_folder, updated_report_filename)
+    document.save(updated_report_path)
+    print(f"Updated report saved as: {updated_report_path}")
+
+
+# Main function to run the OSINT report generation
+def main():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Create a new incognito context
+        context = browser.new_context()
+
+        # Perform various scans
+        screenshot_paths = {}
+
+        print("NMAP Scan Started")
+        screenshot_paths['nmap'] = nmap_scan(page, url_to_scan, screenshot_folder)
+        print("NMAP Scan completed")
+        print("Security Headers Scan started")
+        screenshot_paths['security_headers'] = scan_security_headers(page, url_to_scan, screenshot_folder)
+        print("Security Headers Scan completed")
+        print("SPF Record Lookup Scan Started")
+        screenshot_paths['spf'] = spf_record(page, url_to_scan, screenshot_folder)
+        print("SPF Record Lookup Scan completed")
+        print("DMARC Scan Started")
+        screenshot_paths['dmarc'] = check_dmarc_record(page, url_to_scan, screenshot_folder)
+        print("DMARC Scan completed")
+        print("DKIM Scan Started")
+        screenshot_paths['dkim'] = check_dkim_record(page, url_to_scan, "default", screenshot_folder)
+        print("DKIM Scan completed")
+        print("Wappalyzer Scan Started")
+        screenshot_paths['wappalyzer'] = wapplyzer_scan(page, url_to_scan, screenshot_folder)
+        print("Wappalyzer Scan completed")
+
+        insert_all_screenshots_in_word(word_template_path, new_company_name, current_date, screenshot_paths, os.path.dirname(word_template_path))
+
+        browser.close()
+
+if __name__ == "__main__":
+    main()
