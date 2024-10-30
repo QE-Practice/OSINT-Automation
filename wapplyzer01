@@ -1,0 +1,39 @@
+def wapplyzer_scan(page, url_to_scan, screenshot_folder):
+    # Navigate to Wappalyzer login page
+    page.goto('https://www.wappalyzer.com/')
+    time.sleep(3)
+
+    sign_in_button = page.query_selector("button.font-weight-regular.v-btn.v-btn--text.theme--light.v-size--default.white--text")
+    sign_in_button.click()
+
+    page.fill("//div[@class='v-text-field__slot']/label[text()='Email address']/following::input[@type='text']", "kondeti.venkata@bahwancybertek.com")
+    page.fill("//div[@class='v-text-field__slot']/label[text()='Password']/following::input[@type='password']", "Teja@1234")
+
+    sign_in_btn = page.query_selector("//*[@id='app']/div[3]/div/div/div[2]/form/button")
+    sign_in_btn.click()
+    time.sleep(5)
+
+    search_bar = page.query_selector("input[placeholder='Website URL, technology, keyword or email address']")
+    search_bar.click()
+
+    search_url = page.query_selector("input[required='required']")
+    search_url.fill(url_to_scan)  # Use the Facebook URL for Wappalyzer
+
+    time.sleep(5)
+
+    tech_lookup = page.query_selector(".d-flex.align-center.caption.font-weight-medium")
+    tech_lookup.click()
+    time.sleep(10)
+
+    # Initialize list to hold screenshot paths
+    screenshot_paths = []
+
+    # Capture the first screenshot
+    screenshot_paths.append(capture_screenshot_with_timestamp(page, screenshot_folder, "Wappalyzer_Record_1"))
+
+    for _ in range(2):  # Scroll down and capture more screenshots
+        page.evaluate("window.scrollBy(0, window.innerHeight);")
+        time.sleep(3)
+        screenshot_paths.append(capture_screenshot_with_timestamp(page, screenshot_folder, f"Wappalyzer_Record_{len(screenshot_paths) + 1}"))
+
+    return screenshot_paths  # Return the list
