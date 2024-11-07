@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body, html {
-            background-color: #2752a3;
+            background-color: hsl(201, 33%, 90%);
             height: 100vh;
             margin: 0;
             padding: 0 20px;
@@ -193,7 +193,7 @@
             padding: 10px 20px;
             font-size: 16px;
             color: #ffffff;
-            background-color: #254e58;
+            background-color: #2b8fa8;
             border: none;
             border-radius: 20px;
             cursor: pointer;
@@ -277,6 +277,15 @@
         <br><br><br><br>
 
         <div class="button-container"></div>
+        <ul>
+            <li><input type="checkbox" id="task1" name="functionality" value="Techstack Scan"> <label for="task1">Techstack Scan</label></li>
+            <li><input type="checkbox" id="task2" name="functionality" value="Port Detection"> <label for="task2">Port Detection</label></li>
+            <li><input type="checkbox" id="task3" name="functionality" value="Security Headers Information"> <label for="task3">Security Headers Information</label></li>
+            <li><input type="checkbox" id="task4" name="functionality" value="Email Spoofing Check-SPF"> <label for="task4">Email Spoofing Check-SPF</label></li>
+            <li><input type="checkbox" id="task5" name="functionality" value="Email Spoofing Check-DMARC"> <label for="task5">Email Spoofing Check-DMARC </label></li>
+            <li><input type="checkbox" id="task6" name="functionality" value="Email Spoofing Check-DKIM"> <label for="task6">Email Spoofing Check-DKIM</label></li>
+            <li><input type="checkbox" id="task7" name="functionality" value="Select All"> <label for="task7">Select All</label></li>
+        </ul>
         <button type="submit">Submit</button>
         <div class="spinner" id="loading-spinner"></div>
     </form>
