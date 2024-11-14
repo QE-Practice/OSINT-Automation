@@ -1,0 +1,23 @@
+from playwright.sync_api import sync_playwright
+
+
+def get_web_element_and_inference():
+    with sync_playwright() as p:
+        # Launch browser
+        browser = p.chromium.launch(headless=True)  # Change to False to see the browser
+        page = browser.new_page()
+
+        # Navigate to the URL
+        page.goto("https://hackertarget.com/nmap-online-port-scanner/")
+
+        # Get the text content of the specified web element
+        element = page.query_selector("xpath=//div[@id='formResponse']/pre[@id='formResponse']")
+        if element:
+            text_content = element.inner_text()
+            print(text_content)
+            # inference = process_text(text_content)
+            # browser.close()
+            # return text_content, inference
+        else:
+            browser.close()
+            return None, "Element not found"
