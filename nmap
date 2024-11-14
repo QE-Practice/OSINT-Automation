@@ -1,6 +1,5 @@
 from playwright.sync_api import sync_playwright
 
-
 def get_web_element_and_inference():
     with sync_playwright() as p:
         # Launch browser
@@ -15,9 +14,9 @@ def get_web_element_and_inference():
         if element:
             text_content = element.inner_text()
             print(text_content)
-            # inference = process_text(text_content)
-            # browser.close()
-            # return text_content, inference
+            browser.close()  # Ensure browser is closed after processing
+            # inference = process_text(text_content)  # Un-comment and implement as needed
+            return text_content, None  # Modify based on actual inference function
         else:
             browser.close()
             return None, "Element not found"
